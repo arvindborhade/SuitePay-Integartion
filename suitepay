@@ -1,0 +1,449 @@
+<?php
+/*******
+* Developed By Skyscript 
+* Email: info@skyscript.net
+* Website: skyscript.net
+*
+*
+*
+*
+
+Xample 
+		$mid = "99";   // this changes to live mid after testing period
+		$creditcard = "4660840000058018";
+		$month = "09";  // MM
+		$year = "18";     // YY - remeber 2 digits
+		$cvv = "111";
+		$amount = "129.23";			
+		$ch_name="John Smith";
+		$opt = "";
+		
+		$baddress="123 some st";
+		$baddress2="apt 1";
+		$bcity="Beverly Hills";
+		$bcountry="US";   
+		$bstate="CA";
+		$bzip="90210";
+		$cphone="1234567890";
+		$ipaddress="0.0.0.0";
+		$cfirstname="John";
+		$clastname="Smith";
+		$currency= 'USD';
+		$cemail="test@test.com";
+		$cwebaddress="www.web.com";
+				 
+
+		$credit_card = array(
+						'mid'=>$mid,
+						'amount' => $amount,
+						'creditcard' => $creditcard,
+						'cardfullname' => $ch_name,
+						'cvv' => $cvv,
+						'currency' => 'USD',
+						'month' => $month,
+						'year' => $year, 
+		);
+		
+		$customer = array(		   
+				   'baddress' => $baddress,
+				   'bcountry' => $bcountry,
+				   'bcity' => $bcity,
+				   'bstate' => $bstate,
+				   'bzip' => $bzip,
+				   'cfirstname' => $cfirstname,
+				   'clastname' => $clastname,
+				   'cphone' => $cphone,
+				   'cemail' => $cemail,
+                   'ipaddress' => $ipaddress,
+		);		
+		$client_id = "12";
+		$order_id = "12";
+
+		$this->suitepay->Charge($client_id, $order_id, $customer, $amount, $credit_card);
+********/
+
+class suitepay
+{
+	var $settings;
+
+	private $debug = false;
+
+	//---------------------------------------------------------------
+
+	function suitepay() {
+		$this->settings = $this->Settings();
+	}
+	
+
+	//---------------------------------------------------------------
+
+	function Settings()
+	{
+		$settings = array();
+
+		$settings['name'] = 'SuitePay';
+		$settings['curl'] = 'https://qa.suitepay.com/api/v2/card/sale';
+		$settings['class_name'] = 'suitepay';
+		$settings['user_login'] = 'lNKHLj6Wj78';
+		$settings['public_key'] = 'z5gZIal4F8AXhETje5HFHSNS2IpZElP0';
+		$settings['developerid'] = '641c1cf4f46b571a4b5fa55b6857b67cc0de0962';
+		
+		$settings['debug'] = '1'; // 1 for testing and 0 for live 
+
+		return $settings;
+	}
+
+	
+	//---------------------------------------------------------------
+
+	function Charge($client_id, $order_id, $customer, $amount, $credit_card)
+	{
+		$CI =& get_instance();
+		$settings = $this->settings;
+		
+		$data = array (
+			'transaction_data' => array (
+				   'mid'=>$credit_card['mid'],
+				   'amount' => $amount,
+				   'creditcard' => $credit_card['creditcard'],
+				   'cardfullname' => $credit_card['cardfullname'],
+				   'cvv' => $credit_card['cvv'],
+				   'currency' => 'USD',
+				   'month' => $credit_card['month'],
+				   'year' => $credit_card['year'],
+				   'orderid' => $order_id,    
+				   'baddress' => $customer['baddress'],
+				   'bcountry' => $customer['bcountry'],
+				   'bcity' => $customer['bcity'],
+				   'bstate' => $customer['bstate'],
+				   'bzip' => $customer['bzip'],
+				   'cfirstname' => $customer['cfirstname'],
+				   'clastname' => $customer['clastname'],
+				   'cphone' => $customer['cphone'],
+				   'cemail' => $customer['cemail'],
+				   'ipaddress' => $customer['ipaddress']
+				 ),
+			'user_login' => $settings['user_login'],
+			'public_key' => $settings['public_key'],
+			'developerid' => $settings['developerid'],
+		);
+		
+		$action = "card/sale";
+		
+		$response = $this->Process($order_id, $data,$action,$settings['debug']);
+		
+		
+		
+		
+		if ($settings['debug']>0)	
+		{
+			$this->log_it('Charge Params: ', $data);
+			$this->log_it('Charge Response: ', $response);
+		}
+		
+		/*
+		if($response['success']){
+			$response_array = array('charge_id' => $order_id);
+			$response = $CI->response->TransactionResponse(1, $response_array);
+		} else {
+			$response_array = array('reason' => $response['reason']);
+			$response = $CI->response->TransactionResponse(2, $response_array);
+		}
+		*/
+
+		return $response;
+	}
+	
+	function Refund($client_id, $order_id, $customer, $amount, $transaction_id)
+	{
+		$CI =& get_instance();
+		$settings = $this->settings;
+		
+		$data = array (
+			 'transaction_data' => array (
+                   'amount' => $amount,
+					'orderid' => $order_id,
+					'transaction_id'=> $transaction_id,
+                 ),
+			'user_login' => $settings['user_login'],
+			'public_key' => $settings['public_key'],
+			'developerid' => $settings['developerid'],
+		);
+		
+
+		$action = "card/refund";
+		$test = TRUE;
+		$response = $this->Process($order_id, $data,$action,$test = FALSE);
+		
+		
+		
+		
+		if ($test)
+		{
+			$this->log_it('Charge Refund: ', $data);
+			$this->log_it('Charge Response: ', $response);
+		}
+		
+		/*
+		if($response['success']){
+			$response_array = array('charge_id' => $order_id);
+			$response = $CI->response->TransactionResponse(1, $response_array);
+		} else {
+			$response_array = array('reason' => $response['reason']);
+			$response = $CI->response->TransactionResponse(2, $response_array);
+		}
+		*/
+
+		return $response;
+	}
+	
+	function Recurring($client_id, $order_id, $customer, $transaction_id)
+	{
+		$CI =& get_instance();
+		$settings = $this->settings;
+		
+		$data = array (
+		'transaction_data' => array (
+						'orderid' => $order_id,
+						'transaction_id'=> $transaction_id,
+					 ),
+			'user_login' => $settings['user_login'],
+			'public_key' => $settings['public_key'],
+			'developerid' => $settings['developerid'],
+                 
+          
+		);
+		
+
+		$action = "card/recurring";
+		$test = TRUE;
+		$response = $this->Process($order_id, $data,$action,$test = FALSE);
+		
+		
+		
+		
+		if ($test)
+		{
+			$this->log_it('Charge Refund: ', $data);
+			$this->log_it('Charge Response: ', $response);
+		}
+		
+		/*
+		if($response['success']){
+			$response_array = array('charge_id' => $order_id);
+			$response = $CI->response->TransactionResponse(1, $response_array);
+		} else {
+			$response_array = array('reason' => $response['reason']);
+			$response = $CI->response->TransactionResponse(2, $response_array);
+		}
+		*/
+
+		return $response;
+	}
+
+	function Capture($client_id, $order_id, $customer, $amount, $transaction_id)
+	{
+		$CI =& get_instance();
+		$settings = $this->settings;
+		
+		$data = array(
+			'transaction_data' => array (
+						'amount' => $amount,
+						'orderid' => $order_id,
+						'transaction_id'=> $transaction_id,
+					 ),
+			'user_login' => $settings['user_login'],
+			'public_key' => $settings['public_key'],
+			'developerid' => $settings['developerid'],
+			);
+		
+
+		$action = "card/capture";
+		$test = TRUE;
+		$response = $this->Process($order_id, $data,$action,$test = FALSE);
+		
+		
+		
+		
+		if ($test)
+		{
+			$this->log_it('Charge Refund: ', $data);
+			$this->log_it('Charge Response: ', $response);
+		}
+		
+		/*
+		if($response['success']){
+			$response_array = array('charge_id' => $order_id);
+			$response = $CI->response->TransactionResponse(1, $response_array);
+		} else {
+			$response_array = array('reason' => $response['reason']);
+			$response = $CI->response->TransactionResponse(2, $response_array);
+		}
+		*/
+
+		return $response;
+	}
+	
+	function Void($client_id, $order_id, $customer, $amount, $transaction_id)
+	{
+		$CI =& get_instance();
+		$settings = $this->settings;
+		
+		$data = array(
+			'transaction_data' => array (
+						'amount' => $amount,
+						'orderid' => $order_id,
+						'transaction_id'=> $transaction_id,
+					 ),
+			'user_login' => $settings['user_login'],
+			'public_key' => $settings['public_key'],
+			'developerid' => $settings['developerid'],
+			);
+		
+
+		$action = "card/void";
+		$test = TRUE;
+		$response = $this->Process($order_id, $data,$action,$test = FALSE);
+		
+		
+		
+		
+		if ($test)
+		{
+			$this->log_it('Charge Refund: ', $data);
+			$this->log_it('Charge Response: ', $response);
+		}
+		
+		/*
+		if($response['success']){
+			$response_array = array('charge_id' => $order_id);
+			$response = $CI->response->TransactionResponse(1, $response_array);
+		} else {
+			$response_array = array('reason' => $response['reason']);
+			$response = $CI->response->TransactionResponse(2, $response_array);
+		}
+		*/
+
+		return $response;
+	}
+	
+	function Process($order_id, $data, $test = FALSE)
+	{
+		$CI =& get_instance();
+
+		
+/*********************************************/
+			$json_data = json_encode($data);
+			$curlURL = "https://api.suitepay.com/api/v2/card/sale";// qa.suitepay.com for testing and api.suitepay.com for the live			
+
+			if($test){
+				$curlURL = "https://qa.suitepay.com/api/v2/card/sale";
+			}
+			
+			
+
+			$ch = curl_init($curlURL);
+			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $json_data);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			
+			$response = curl_exec($ch);
+			$arresult = json_decode($response,true);
+			$settings = $this->settings;
+			if($settings['debug']>0){
+				print_r (curl_errno($ch));
+				print_r($ch);
+				print_r($arresult);
+			}
+			
+/*********************************************/
+
+
+	
+		// if(!isset($response[1])) {
+			// $response['success'] = FALSE;
+			// return $response;
+		// }
+
+		// if ($test) {
+			// if($response[0] == 1) {
+				// $response['success'] = TRUE;
+			// } else {
+				// $response['success'] = FALSE;
+			// }
+
+			// return $response;
+		// }
+		// // Get the response.  1 for the first part meant that it was successful.  Anything else and it failed
+		// if ($response[0] == 1) {
+			// $CI->load->model('order_authorization_model');
+			// $CI->order_authorization_model->SaveAuthorization($order_id, $response[6], $response[4]);
+			// $CI->charge_model->SetStatus($order_id, 1);
+
+			// $response['success'] = TRUE;
+		// } else {
+			// $CI->load->model('charge_model');
+			// $CI->charge_model->SetStatus($order_id, 0);
+
+			// $response['success'] = FALSE;
+			// $response['reason'] = $response[3];
+		// }
+
+		return $arresult;
+
+	}
+
+	//---------------------------------------------------------------
+
+	
+
+	/**
+	 * Htmlspecialchars all individual items in an array.
+	 *
+	 */
+	function EncodeArray(&$items = null)
+	{
+		if (!is_array($items) || !count($items))
+		{
+			return;
+		}
+
+		foreach ($items as $item => &$value)
+		{
+			if (is_string($value))
+			{
+				$value = htmlspecialchars($value);
+			}
+			else if (is_array($value))
+			{
+				$value = $this->EncodeArray($value);
+			}
+		}
+	}
+
+	//---------------------------------------------------------------
+
+	/*
+		Method: log_it()
+
+		Logs the transaction to a file. Helpful with debugging callback
+		transactions, since we can't actually see what's going on.
+
+		Parameters:
+			$heading	- A string to be placed above the resutls
+			$params		- Typically an array to print_r out so that we can inspect it.
+	*/
+	public function log_it($heading, $params)
+	{
+		$file = FCPATH .'log/gateway_log.txt';
+
+		$content  = '';
+		$content .= "\n\n//---------------------------------------------------------------\n";
+		$content .= "\n\n[{$this->settings['name']}] $heading\n";
+		$content .= date('Y-m-d H:i:s') ."\n\n";
+		$content .= print_r($params, true);
+		file_put_contents($file, $content, FILE_APPEND);
+	}
+
+	
+}
