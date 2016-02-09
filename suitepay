@@ -156,11 +156,11 @@ class suitepay
 
 		$settings['class_name'] = 'suitepay';
 
-		$settings['user_login'] = 'lNKHLj6Wj78';
+		$settings['user_login'] = '<your userlogin>';
 
-		$settings['public_key'] = 'z5gZIal4F8AXhETje5HFHSNS2IpZElP0';
+		$settings['public_key'] = '<your public_key>';
 
-		$settings['developerid'] = '641c1cf4f46b571a4b5fa55b6857b67cc0de0962';
+		$settings['developerid'] = '<your developerid>';
 		$settings['debug'] = '1'; // 1 for testing and 0 for live 
 		$settings['mid']='99';    // this changes to live mid after testing period
 		$settings['external'] = FALSE;
